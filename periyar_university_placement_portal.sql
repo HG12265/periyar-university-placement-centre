@@ -503,6 +503,13 @@ ALTER TABLE `Notification` ADD CONSTRAINT `Notification_userId_fkey` FOREIGN KEY
 
 ALTER TABLE `StudentImportBatch` ADD CONSTRAINT `StudentImportBatch_coordinatorId_fkey` FOREIGN KEY (`coordinatorId`) REFERENCES `Coordinator` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
+
+ALTER TABLE Experience ADD CONSTRAINT Experience_studentId_fkey FOREIGN KEY (studentId) REFERENCES Student (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE AnnouncementDepartment ADD CONSTRAINT AnnouncementDepartment_announcementId_fkey FOREIGN KEY (nnouncementId) REFERENCES Announcement (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE AnnouncementDepartment ADD CONSTRAINT AnnouncementDepartment_departmentId_fkey FOREIGN KEY (departmentId) REFERENCES Department (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
 -- ============================================================================
 -- INITIAL SEED DATA
 -- ============================================================================
@@ -556,4 +563,3 @@ INSERT INTO `Programme` (`id`, `departmentId`, `name`, `code`, `level`, `active`
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 
 SET FOREIGN_KEY_CHECKS = 1;
-
