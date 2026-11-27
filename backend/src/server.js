@@ -12,6 +12,7 @@
  */
 
 import 'dotenv/config';
+import fs from 'node:fs';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -155,6 +156,9 @@ app.use((err, req, res, next) => {
 
   if (status >= 500) {
     console.error('[Server Error]', err);
+    try {
+      fs.appendFileSync('server_error.log', `[${new Date().toISOString()}] [Route: ${req.method} ${req.originalUrl}] ${err.stack || err}\n`);
+    } catch (_) {}
   }
 
   res.status(status).json({ error: message });
