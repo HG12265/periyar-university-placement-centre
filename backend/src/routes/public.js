@@ -20,9 +20,14 @@ const r = Router();
 r.get(
   '/live-drives',
   asyncRoute(async (req, res) => {
-    // 1. Try to fetch currently active approved jobs (deadline in future)
-    let jobs = await db.job.findMany({
-      where: availableJobsWhere(),
+    // Strictly fetch ONLY active, approved jobs whose application deadline is in the future
+    const jobs = await db.job.findMany({
+      where: {
+        approval: 'APPROVED',
+        active: true,
+        archived: false,
+        deadline: { gte: new Date() }
+      },
       include: {
         company: {
           select: {
@@ -43,36 +48,6 @@ r.get(
       orderBy: { createdAt: 'desc' },
       take: 12
     });
-
-    // 2. Fallback to latest approved jobs if all deadlines expired in dev/test environment
-    if (!jobs.length) {
-      jobs = await db.job.findMany({
-        where: {
-          approval: 'APPROVED',
-          active: true,
-          archived: false
-        },
-        include: {
-          company: {
-            select: {
-              id: true,
-              name: true,
-              logoFileId: true
-            }
-          },
-          departments: {
-            include: {
-              department: {
-                select: { name: true }
-              }
-            }
-          },
-          years: true
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 6
-      });
-    }
 
     res.json(jobs);
   })

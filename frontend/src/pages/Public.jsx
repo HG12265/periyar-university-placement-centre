@@ -182,7 +182,12 @@ function RecruitmentTicker() {
       .get('/public/live-drives')
       .then((res) => {
         if (active && Array.isArray(res.data)) {
-          setDrives(res.data);
+          // Double filter on client side: only active jobs whose deadline has NOT passed
+          const now = new Date();
+          const activeDrives = res.data.filter(
+            (j) => j && j.deadline && new Date(j.deadline) >= now
+          );
+          setDrives(activeDrives);
         }
       })
       .catch(() => {
@@ -193,6 +198,11 @@ function RecruitmentTicker() {
       active = false;
     };
   }, []);
+
+  // If there are NO live approved jobs whose deadline is open, HIDE THE ENTIRE TICKER COMPLETELY
+  if (!drives || drives.length === 0) {
+    return null;
+  }
 
   const formatSalary = (j) => {
     if (!j.salaryMin && !j.salaryMax) return null;
@@ -221,30 +231,6 @@ function RecruitmentTicker() {
         : drives;
 
   const renderContent = (prefix) => {
-    if (!items.length) {
-      return (
-        <>
-          <Link to="/login" className="ticker-item">
-            <span className="ticker-company">🎓 Periyar University Placement & Training Cell</span>
-            <span className="ticker-role">Official Campus Recruitment Drives 2025–2026</span>
-            <span className="ticker-meta-pill">Recruitment Drives Active</span>
-            <span className="ticker-apply-btn">
-              Portal Sign In <ArrowRight size={11} />
-            </span>
-          </Link>
-          <span className="ticker-separator">✦</span>
-          <Link to="/login" className="ticker-item">
-            <span className="ticker-company">📢 Top Corporate Partners</span>
-            <span className="ticker-role">IT, ITES, Banking, Core & Management Drives Open for Students</span>
-            <span className="ticker-apply-btn">
-              View & Apply <ArrowRight size={11} />
-            </span>
-          </Link>
-          <span className="ticker-separator">✦</span>
-        </>
-      );
-    }
-
     return items.map((j, idx) => {
       const salary = formatSalary(j);
       const deadline = formatDeadline(j.deadline);
