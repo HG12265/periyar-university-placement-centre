@@ -1,0 +1,2 @@
+# Generated initial MySQL schema
+provider = "mysql"

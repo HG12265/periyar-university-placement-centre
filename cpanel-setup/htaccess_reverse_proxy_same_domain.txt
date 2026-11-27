@@ -1,0 +1,25 @@
+# ==============================================================================
+# PERIYAR UNIVERSITY PLACEMENT PORTAL - SAME DOMAIN REVERSE PROXY .htaccess
+# ==============================================================================
+# USE THIS ONLY IF:
+# Frontend and Backend are hosted on the SAME domain (e.g. yourdomain.com)
+# and your cPanel Node.js app is listening on a local port (e.g. 5000).
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Proxy /api requests to the Node.js backend port
+  RewriteCond %{REQUEST_URI} ^/api [NC]
+  RewriteRule ^api/(.*)$ http://127.0.0.1:5000/api/$1 [P,L]
+
+  # Regular SPA routing for the React frontend
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+<IfModule mod_proxy.c>
+  ProxyPreserveHost On
+</IfModule>
+

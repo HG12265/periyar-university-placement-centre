@@ -1,0 +1,395 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  COMPANY
+  UNIVERSITY_ADMIN
+  DEPARTMENT_COORDINATOR
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  DISABLED
+}
+
+enum JobApproval {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SHORTLISTED
+  SELECTED
+  REJECTED
+}
+
+enum AnnouncementAudience {
+  COORDINATORS
+  DEPARTMENT_STUDENTS
+  STUDENTS
+  BOTH
+}
+
+model User {
+  id String @id @default(uuid()) @db.VarChar(36)
+  email String @unique @db.VarChar(191)
+  fullName String @db.VarChar(191)
+  passwordHash String? @db.VarChar(255)
+  role Role
+  status AccountStatus @default(PENDING)
+  mustChangePassword Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student Student?
+  company Company?
+  coordinator Coordinator?
+  sessions Session[]
+  activations ActivationToken[]
+  resets ResetToken[]
+  notifications Notification[]
+  reads AnnouncementRead[]
+  @@index([role, status])
+}
+model Session {
+  id String @id @default(uuid()) @db.VarChar(36)
+  userId String @db.VarChar(36)
+  tokenHash String @unique @db.VarChar(64)
+  csrfToken String @db.VarChar(100)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, expiresAt])
+}
+model ActivationToken {
+  id String @id @default(uuid()) @db.VarChar(36)
+  userId String @db.VarChar(36)
+  tokenHash String @unique @db.VarChar(64)
+  expiresAt DateTime
+  usedAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model ResetToken {
+  id String @id @default(uuid()) @db.VarChar(36)
+  userId String @db.VarChar(36)
+  tokenHash String @unique @db.VarChar(64)
+  expiresAt DateTime
+  usedAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model Department {
+  id String @id @default(uuid()) @db.VarChar(36)
+  name String @unique @db.VarChar(191)
+  code String? @unique @db.VarChar(20)
+  active Boolean @default(true)
+  programmes Programme[]
+  students Student[]
+  coordinators Coordinator[]
+  jobTargets JobDepartment[]
+  announcements Announcement[]
+  announcementTargets AnnouncementDepartment[]
+}
+model Programme {
+  id String @id @default(uuid()) @db.VarChar(36)
+  departmentId String @db.VarChar(36)
+  name String @db.VarChar(191)
+  code String? @db.VarChar(30)
+  level String @db.VarChar(2)
+  active Boolean @default(true)
+  department Department @relation(fields: [departmentId], references: [id])
+  students Student[]
+  jobTargets JobProgramme[]
+  @@unique([departmentId, name])
+  @@index([departmentId])
+}
+model Coordinator {
+  id String @id @default(uuid()) @db.VarChar(36)
+  userId String @unique @db.VarChar(36)
+  departmentId String @db.VarChar(36)
+  user User @relation(fields: [userId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+  imports StudentImportBatch[]
+  @@index([departmentId])
+}
+model Student {
+  id String @id @default(uuid()) @db.VarChar(36)
+  userId String @unique @db.VarChar(36)
+  registrationNo String @unique @db.VarChar(50)
+  departmentId String @db.VarChar(36)
+  programmeId String @db.VarChar(36)
+  passingYear Int
+  level String @db.VarChar(2)
+  phone String? @db.VarChar(30)
+  about String? @db.Text
+  photoFileId String? @db.VarChar(36)
+  linkedin String? @db.VarChar(500)
+  github String? @db.VarChar(500)
+  portfolio String? @db.VarChar(500)
+  twitter String? @db.VarChar(500)
+  user User @relation(fields: [userId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+  programme Programme @relation(fields: [programmeId], references: [id])
+  education Education[]
+  skills StudentSkill[]
+  projects StudentProject[]
+  internships Internship[]
+  experiences Experience[]
+  certificates Certificate[]
+  resumes Resume[]
+  applications Application[]
+  @@index([departmentId, programmeId, passingYear])
+}
+model Education {
+  id String @id @default(uuid()) @db.VarChar(36)
+  studentId String @db.VarChar(36)
+  qualification String @db.VarChar(100)
+  institution String @db.VarChar(191)
+  board String @db.VarChar(191)
+  passingYear Int
+  score Decimal @db.Decimal(5,2)
+  scale String @db.VarChar(20)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+model StudentSkill {
+  id String @id @default(uuid()) @db.VarChar(36)
+  studentId String @db.VarChar(36)
+  name String @db.VarChar(100)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@unique([studentId, name])
+}
+model StudentProject {
+  id String @id @default(uuid()) @db.VarChar(36)
+  studentId String @db.VarChar(36)
+  title String @db.VarChar(191)
+  description String @db.Text
+  technologies String @default("") @db.VarChar(500)
+  github String? @db.VarChar(500)
+  liveUrl String? @db.VarChar(500)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+model Internship {
+  id String @id @default(uuid()) @db.VarChar(36)
+  studentId String @db.VarChar(36)
+  companyName String @db.VarChar(191)
+  domain String @db.VarChar(191)
+  startDate DateTime
+  endDate DateTime
+  description String @db.Text
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+model Experience {
+  id String @id @default(uuid()) @db.VarChar(36)
+  studentId String @db.VarChar(36)
+  companyName String @db.VarChar(191)
+  role String @db.VarChar(191)
+  employmentType String? @db.VarChar(60)
+  location String? @db.VarChar(191)
+  startDate DateTime
+  endDate DateTime?
+  currentlyWorking Boolean @default(false)
+  description String @db.Text
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@index([studentId])
+}
+model Certificate {
+  id String @id @default(uuid()) @db.VarChar(36)
+  studentId String @db.VarChar(36)
+  title String @db.VarChar(191)
+  issuer String @db.VarChar(191)
+  year Int
+  fileId String? @db.VarChar(36)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+model Resume {
+  id String @id @default(uuid()) @db.VarChar(36)
+  studentId String @db.VarChar(36)
+  fileId String @unique @db.VarChar(36)
+  isPrimary Boolean @default(true)
+  createdAt DateTime @default(now())
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+model Company {
+  id String @id @default(uuid()) @db.VarChar(36)
+  userId String @unique @db.VarChar(36)
+  name String @db.VarChar(191)
+  website String? @db.VarChar(500)
+  address String? @db.Text
+  industry String? @db.VarChar(191)
+  employeeSize String? @db.VarChar(100)
+  foundedYear Int?
+  description String? @db.Text
+  linkedin String? @db.VarChar(500)
+  twitter String? @db.VarChar(500)
+  contactName String? @db.VarChar(191)
+  contactPhone String? @db.VarChar(30)
+  contactEmail String? @db.VarChar(191)
+  contactDesignation String? @db.VarChar(191)
+  logoFileId String? @db.VarChar(36)
+  user User @relation(fields: [userId], references: [id])
+  jobs Job[]
+}
+model Job {
+  id String @id @default(uuid()) @db.VarChar(36)
+  companyId String @db.VarChar(36)
+  title String @db.VarChar(191)
+  description String @db.LongText
+  jobType String @db.VarChar(40)
+  salaryMin Decimal? @db.Decimal(12,2)
+  salaryMax Decimal? @db.Decimal(12,2)
+  salaryUnit String @default("LPA") @db.VarChar(30)
+  location String @db.VarChar(191)
+  workMode String @default("On-site") @db.VarChar(40)
+  deadline DateTime
+  skills Json?
+  attachmentFileId String? @db.VarChar(36)
+  attachmentName String? @db.VarChar(255)
+  attachmentMime String? @db.VarChar(120)
+  approval JobApproval @default(PENDING)
+  rejectionReason String? @db.Text
+  active Boolean @default(true)
+  archived Boolean @default(false)
+  reviewedBy String? @db.VarChar(36)
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company Company @relation(fields: [companyId], references: [id])
+  departments JobDepartment[]
+  programmes JobProgramme[]
+  years JobYear[]
+  applications Application[]
+  @@index([approval, active, deadline])
+  @@index([companyId, archived])
+}
+model JobDepartment {
+  jobId String @db.VarChar(36)
+  departmentId String @db.VarChar(36)
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id])
+  @@id([jobId, departmentId])
+}
+model JobProgramme {
+  jobId String @db.VarChar(36)
+  programmeId String @db.VarChar(36)
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  programme Programme @relation(fields: [programmeId], references: [id])
+  @@id([jobId, programmeId])
+}
+model JobYear {
+  jobId String @db.VarChar(36)
+  year Int
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  @@id([jobId, year])
+}
+model Application {
+  id String @id @default(uuid()) @db.VarChar(36)
+  studentId String @db.VarChar(36)
+  jobId String @db.VarChar(36)
+  status ApplicationStatus @default(APPLIED)
+  coverLetter String? @db.Text
+  resumeFileId String @db.VarChar(36)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  selectedAt DateTime?
+  student Student @relation(fields: [studentId], references: [id])
+  job Job @relation(fields: [jobId], references: [id])
+  history ApplicationHistory[]
+  @@unique([studentId, jobId])
+  @@index([studentId, status])
+  @@index([jobId, status])
+}
+model ApplicationHistory {
+  id String @id @default(uuid()) @db.VarChar(36)
+  applicationId String @db.VarChar(36)
+  fromStatus ApplicationStatus?
+  toStatus ApplicationStatus
+  actorUserId String @db.VarChar(36)
+  createdAt DateTime @default(now())
+  note String? @db.VarChar(500)
+  application Application @relation(fields: [applicationId], references: [id])
+}
+model Announcement {
+  id String @id @default(uuid()) @db.VarChar(36)
+  authorUserId String @db.VarChar(36)
+  audience AnnouncementAudience
+  departmentId String? @db.VarChar(36)
+  title String @db.VarChar(191)
+  body String @db.Text
+  published Boolean @default(true)
+  attachmentFileId String? @db.VarChar(36)
+  attachmentName String? @db.VarChar(255)
+  attachmentMime String? @db.VarChar(120)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  department Department? @relation(fields: [departmentId], references: [id])
+  targetDepartments AnnouncementDepartment[]
+  reads AnnouncementRead[]
+  @@index([audience, departmentId, published])
+}
+model AnnouncementDepartment {
+  announcementId String @db.VarChar(36)
+  departmentId String @db.VarChar(36)
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  @@id([announcementId, departmentId])
+  @@index([departmentId])
+}
+model AnnouncementRead {
+  announcementId String @db.VarChar(36)
+  userId String @db.VarChar(36)
+  readAt DateTime @default(now())
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([announcementId, userId])
+}
+model Notification {
+  id String @id @default(uuid()) @db.VarChar(36)
+  userId String @db.VarChar(36)
+  message String @db.VarChar(500)
+  read Boolean @default(false)
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, read])
+}
+model FileAsset {
+  id String @id @default(uuid()) @db.VarChar(36)
+  ownerType String @db.VarChar(30)
+  ownerId String @db.VarChar(36)
+  purpose String @db.VarChar(40)
+  originalName String @db.VarChar(255)
+  diskPath String @db.VarChar(500)
+  mimeType String @db.VarChar(120)
+  size Int
+  createdAt DateTime @default(now())
+  @@index([ownerType, ownerId, purpose])
+}
+model StudentImportBatch {
+  id String @id @default(uuid()) @db.VarChar(36)
+  coordinatorId String @db.VarChar(36)
+  stage String @default("PREVIEW") @db.VarChar(20)
+  payload Json
+  validCount Int @default(0)
+  errorCount Int @default(0)
+  createdAt DateTime @default(now())
+  importedAt DateTime?
+  coordinator Coordinator @relation(fields: [coordinatorId], references: [id])
+}
+model AuditLog {
+  id String @id @default(uuid()) @db.VarChar(36)
+  actorUserId String? @db.VarChar(36)
+  action String @db.VarChar(100)
+  resource String @db.VarChar(80)
+  resourceId String? @db.VarChar(36)
+  details Json?
+  createdAt DateTime @default(now())
+  @@index([actorUserId, createdAt])
+}

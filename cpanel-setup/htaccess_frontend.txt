@@ -1,0 +1,39 @@
+# ==============================================================================
+# PERIYAR UNIVERSITY PLACEMENT MANAGEMENT PORTAL - FRONTEND APACHE CONFIGURATION
+# ==============================================================================
+# Placed inside: public_html/placement_centre/.htaccess
+# This file ONLY controls requests to /placement_centre/ and NEVER affects the
+# main university website (periyaruniversity.ac.in).
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /placement_centre/
+
+  # If requested path is a real file or real folder, serve it directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Route all other URLs inside /placement_centre/ to index.html for React Router
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Caching optimization for built assets
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+</IfModule>
