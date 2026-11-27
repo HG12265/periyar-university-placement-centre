@@ -3,68 +3,58 @@
 -- CLEAN SLATE RESET SCRIPT (REMOVES ALL OLD TEST DATA EXCEPT ADMIN)
 -- ============================================================================
 -- Run this SQL in cPanel phpMyAdmin on your placement database:
--- (e.g. cpaneluser_placement OR periyaruni_placement_centre)
+-- (e.g. periyaruni_placement_centre OR cpaneluser_placement)
 --
--- This script will:
---   ✅ KEEP the University Placement Admin account (placement@periyaruniversity.ac.in)
---   ✅ KEEP all Official Academic Departments & Degree Programmes
---   ❌ REMOVE all test students, resumes, educations, projects, internships, experiences
---   ❌ REMOVE all test company recruiters, job postings, recruitment drives
---   ❌ REMOVE all job applications and candidate status histories
---   ❌ REMOVE all department coordinators
---   ❌ REMOVE all announcements, circulars and reads
---   ❌ REMOVE all old user sessions, tokens, notifications, audit logs and file assets
+-- Uses DELETE FROM instead of TRUNCATE to avoid MySQL InnoDB Foreign Key 1701 error.
 -- ============================================================================
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- 1. Remove All Job Applications & Candidate Status History
-TRUNCATE TABLE `ApplicationHistory`;
-TRUNCATE TABLE `Application`;
+DELETE FROM `ApplicationHistory`;
+DELETE FROM `Application`;
 
 -- 2. Remove All Recruitment Jobs, Eligibility Targets & Drives
-TRUNCATE TABLE `JobYear`;
-TRUNCATE TABLE `JobDepartment`;
-TRUNCATE TABLE `JobProgramme`;
-TRUNCATE TABLE `Job`;
+DELETE FROM `JobYear`;
+DELETE FROM `JobDepartment`;
+DELETE FROM `JobProgramme`;
+DELETE FROM `Job`;
 
 -- 3. Remove All Student Profiles, Portfolios & Uploaded Resumes
-TRUNCATE TABLE `Education`;
-TRUNCATE TABLE `StudentSkill`;
-TRUNCATE TABLE `StudentProject`;
-TRUNCATE TABLE `Internship`;
-TRUNCATE TABLE `Experience`;
-TRUNCATE TABLE `Certificate`;
-TRUNCATE TABLE `Resume`;
-TRUNCATE TABLE `Student`;
-TRUNCATE TABLE `StudentImportBatch`;
+DELETE FROM `Education`;
+DELETE FROM `StudentSkill`;
+DELETE FROM `StudentProject`;
+DELETE FROM `Internship`;
+DELETE FROM `Experience`;
+DELETE FROM `Certificate`;
+DELETE FROM `Resume`;
+DELETE FROM `Student`;
+DELETE FROM `StudentImportBatch`;
 
 -- 4. Remove All Company Recruiter Profiles
-TRUNCATE TABLE `Company`;
+DELETE FROM `Company`;
 
 -- 5. Remove All Department Placement Coordinators
-TRUNCATE TABLE `Coordinator`;
+DELETE FROM `Coordinator`;
 
 -- 6. Remove All Announcements, Target Links & Read Tracking
-TRUNCATE TABLE `AnnouncementDepartment`;
-TRUNCATE TABLE `AnnouncementRead`;
-TRUNCATE TABLE `Announcement`;
+DELETE FROM `AnnouncementDepartment`;
+DELETE FROM `AnnouncementRead`;
+DELETE FROM `Announcement`;
 
 -- 7. Remove All Old Sessions, Security Tokens, Notifications & File Records
-TRUNCATE TABLE `Session`;
-TRUNCATE TABLE `ActivationToken`;
-TRUNCATE TABLE `ResetToken`;
-TRUNCATE TABLE `Notification`;
-TRUNCATE TABLE `FileAsset`;
-TRUNCATE TABLE `AuditLog`;
+DELETE FROM `Session`;
+DELETE FROM `ActivationToken`;
+DELETE FROM `ResetToken`;
+DELETE FROM `Notification`;
+DELETE FROM `FileAsset`;
+DELETE FROM `AuditLog`;
 
 -- 8. Delete All Users EXCEPT the Placement Administrator
 DELETE FROM `User` WHERE `role` != 'UNIVERSITY_ADMIN';
 
--- 9. Ensure University Placement Administrator is Active & Reset to Default Credentials
--- Email    : placement@periyaruniversity.ac.in
--- Password : admin@123
+-- 9. Ensure University Placement Administrator is Active
 INSERT INTO `User` (`id`, `email`, `fullName`, `passwordHash`, `role`, `status`, `mustChangePassword`, `createdAt`, `updatedAt`)
 VALUES (
   'usr_admin_pu_001',
